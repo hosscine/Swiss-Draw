@@ -7,7 +7,7 @@ data.kos <- cbind(numeric(nrow(data.deck)),data.deck[,2],
                   data.member[as.numeric(data.deck[,3]),2],numeric(nrow(data.deck)))
 colnames(data.kos) <- c("順位","デッキ名","使用者","勝")
 
-values <- shiny::reactiveValues(kos = data.kos, sttext = NULL, title = "ROUND 0",
+react.val <- shiny::reactiveValues(kos = data.kos, sttext = NULL, title = "ROUND 0",
                                 save.time = "", values.history = NULL)
 
 data.history <- NULL
@@ -20,14 +20,14 @@ shinyServer(
     ####################
     
     output$history <- renderTable({
-      hist <- cbind(values$values.history[, 1], ShowHistory(hist = values$values.history))
+      hist <- cbind(react.val$values.history[, 1], ShowHistory(hist = react.val$values.history))
       if(!is.null(hist)) colnames(hist) <- c("Round", "Deck1", "Deck2", "Result1", "Result2")
       hist
     })
     
     output$summary <- renderTable({
-      if(!is.null(values$values.history)){
-        summary <- ShowKOSummary(values$values.history)
+      if(!is.null(react.val$values.history)){
+        summary <- ShowKOSummary(react.val$values.history)
         rownames(summary) <- deck.user[,1]
         colnames(summary) <- c("圧勝", "辛勝", "惜敗", "惨敗")
         summary <- summary[order(summary[,1], summary[,2],
@@ -43,20 +43,20 @@ shinyServer(
     
     #### TitlePanel ####
     output$title <- renderText({
-      values$title
+      react.val$title
     })
     
     #### SideBar ####
     output$status <- renderText({
-      values$sttext
+      react.val$sttext
     })
     
     output$kos <- renderTable({
-      values$kos
+      react.val$kos
     }, include.rownames=F)
     
     output$savetime <- renderText({
-      values$save.time
+      react.val$save.time
     })
     
     #### MainPanel ####
@@ -87,7 +87,7 @@ shinyServer(
     #### Ivents ####
     observeEvent(input$save, {
       
-      values$sttext <- NULL
+      react.val$sttext <- NULL
       
       #成績収集
       result <- cbind(
@@ -102,25 +102,25 @@ shinyServer(
         if(identical(could_be_numeric(result[game, 3:4]), c(T, T))){
           if (IdenticalMatch(result[game, 1:2], data.history)) {
             if (result[game, 3] == result[game, 4])
-              values$sttext <- "Error: Result that wins same times was tried to save."
+              react.val$sttext <- "Error: Result that wins same times was tried to save."
             else
               data.history <<- rbind(data.history,
-                                     values$title %>% as.character %>% substring(first = 7) %>% 
+                                     react.val$title %>% as.character %>% substring(first = 7) %>% 
                                        c(result[game,]) %>% as.numeric
                                      )
-            values$values.history <- data.history
+            react.val$values.history <- data.history
           }
         }
       }
       
       #koの更新
       if (!is.null(data.history)) {
-        data.kos <<- calcKos(data.kos,data.history[, 2:5], values)
-        values$kos <- data.kos[order(as.numeric(data.kos[, 4]), decreasing = T),]
-        values$save.time <- paste("last saved", Sys.time())
+        data.kos <<- calcKos(data.kos,data.history[, 2:5], react.val)
+        react.val$kos <- data.kos[order(as.numeric(data.kos[, 4]), decreasing = T),]
+        react.val$save.time <- paste("last saved", Sys.time())
         
         attr(data.history, "match.table") <- result
-        attr(data.history, "round") <- substring(as.character(values$title), 7)
+        attr(data.history, "round") <- substring(as.character(react.val$title), 7)
         save(data.history, file = "korec.ko")
       }
       
@@ -128,7 +128,7 @@ shinyServer(
     
     #抽選ボタン
     observeEvent(input$lottery,{
-      opponent <- calcOponent(data.kos, data.history[, 2:5], values)
+      opponent <- calcOponent(data.kos, data.history[, 2:5], react.val)
       for (i in 1:(decks / 2)) {
         updateSelectInput(session,paste0("deckl", i), selected = data.deck[opponent[i, 1], 2])
         updateSelectInput(session,paste0("deckr", i), selected = data.deck[opponent[i, 2], 2])
@@ -136,12 +136,12 @@ shinyServer(
         updateSelectInput(session,paste0("resultr", i), selected = "--")
       }
       
-      values$title <- paste("ROUND", as.numeric(substring(values$title, 7))+1)
+      react.val$title <- paste("ROUND", as.numeric(substring(react.val$title, 7))+1)
     })
     
     #再抽選ボタン（ラウンドを進めない抽選）
     observeEvent(input$relottery,{
-      opponent <- calcOponent(data.kos, data.history[, 2:5], values)
+      opponent <- calcOponent(data.kos, data.history[, 2:5], react.val)
       for (i in 1:(decks / 2)) {
         updateSelectInput(session,paste0("deckl", i), selected = data.deck[opponent[i, 1], 2])
         updateSelectInput(session,paste0("deckr", i), selected = data.deck[opponent[i, 2], 2])
@@ -163,7 +163,7 @@ shinyServer(
           attr(data.history, "match.table") <- data.history.attr$match.table
         }
           
-        values$values.history <- data.history
+        react.val$values.history <- data.history
         
         
         match.table <- attr(data.history, "match.table")
@@ -175,12 +175,12 @@ shinyServer(
           updateSelectInput(session, paste0("resultl", i), selected = match.table[i, 3])
           updateSelectInput(session, paste0("resultr", i), selected = match.table[i, 4])
         }
-        values$title <- paste("ROUND", as.numeric(attr(data.history, "round"), 7))
+        react.val$title <- paste("ROUND", as.numeric(attr(data.history, "round"), 7))
         
         if (!is.null(data.history)) {
-          data.kos <<- calcKos(data.kos, data.history[, 2:5], values)
-          values$kos <- data.kos[order(as.numeric(data.kos[, 4]), decreasing = T),]
-          values$stext <- "Load completed."
+          data.kos <<- calcKos(data.kos, data.history[, 2:5], react.val)
+          react.val$kos <- data.kos[order(as.numeric(data.kos[, 4]), decreasing = T),]
+          react.val$stext <- "Load completed."
         }
       }
     })
