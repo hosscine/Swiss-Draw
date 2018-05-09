@@ -37,12 +37,18 @@ entryData <- R6::R6Class(
     
     deck = function() private$decks,
     
+    deck.id = function(){
+      ret <- 1:self$ndeck; names(ret) <- self$deck; return(ret)},
+    
+    deck.player = function(){
+      ret <- private$players[private$decks.player.id]; names(ret) <- self$deck; return(ret)},  
+    
     deck.player.id = function(){
       ret <- private$decks.player.id; names(ret) <- self$deck; return(ret)},
     
     player = function() private$players,
     
-    deck.player = function(){
-      ret <- private$players[private$decks.player.id]; names(ret) <- self$deck; return(ret)}
+    player.id = function(){
+      ret <- 1:self$nplayer; names(ret) <- self$player; return(ret)}
   )
 )
