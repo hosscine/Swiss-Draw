@@ -10,7 +10,7 @@ loadEntryData <- function(file){
 entryData <- R6::R6Class(
   "entryData",
 
-# public field ------------------------------------------------------------
+  # public field ------------------------------------------------------------
 
   public = list(
     initialize = function(deck.names, deck.user.id, user.names){
@@ -20,7 +20,7 @@ entryData <- R6::R6Class(
     }
   ),
 
-# private field -----------------------------------------------------------
+  # private field -----------------------------------------------------------
 
   private = list(
     decks = NULL,
@@ -29,7 +29,7 @@ entryData <- R6::R6Class(
     users = NULL
   ),
 
-# active binding-----------------------------------------------------------
+  # active binding-----------------------------------------------------------
 
   active = list(
     deck = function() return(private$decks),
