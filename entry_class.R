@@ -32,23 +32,22 @@ entryData <- R6::R6Class(
   # active binding-----------------------------------------------------------
 
   active = list(
+    
+    # deck property ------------------------------------------
     ndeck = function() private$decks %>% length,
-    nplayer = function() private$players %>% length,
-    
     deck = function() private$decks,
-    
     deck.id = function(){
       ret <- 1:self$ndeck; names(ret) <- self$deck; return(ret)},
-    
     deck.player = function(){
       ret <- private$players[private$decks.player.id]; names(ret) <- self$deck; return(ret)},  
-    
     deck.player.id = function(){
       ret <- private$decks.player.id; names(ret) <- self$deck; return(ret)},
-    
+
+    # player property ------------------------------------------
+    nplayer = function() private$players %>% length,    
     player = function() private$players,
-    
     player.id = function(){
       ret <- 1:self$nplayer; names(ret) <- self$player; return(ret)}
+    
   )
 )

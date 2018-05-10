@@ -12,8 +12,12 @@ tournament <- R6::R6Class(
     initialize = function(entry){
       private$entry <- entry
       
-      private$fight.result <- rbind( c(1, 5, 2, 1),
-                                      c(3, 4, 0, 2))
+      private$nwin <- private$nlose <- rep(0, self$ndeck)
+      
+      private$fight.result <- data.frame(didl = 1:4,
+                                         didr = c(3,6,2,2),
+                                         winl = c(2, 1, 0, 0),
+                                         winr = c(1, 2, 2, 2))
     },
     
     #' Checks if the fight card is a new card
@@ -29,6 +33,28 @@ tournament <- R6::R6Class(
       is.conflict.rl <- FALSE %in% (rowMinus(self$result.pid, card.rl) %>% rowNorm %>% as.logical)
       
       return(!is.conflict.lr || is.conflict.rl)
+    },
+    
+    #' Updates number of win and lose of each decks
+    #'
+    updateWinLose = function(){
+      # if left player of the fight.result is win?
+      fight.result_winner.is.left <- private$fight.result$winl == 2
+      
+      # process in case left is win
+      winners.l <- private$fight.result[fight.result_winner.is.left,]$didl
+      losers.l <- private$fight.result[fight.result_winner.is.left,]$didr
+      
+      # process in case right is win
+      winners.r <- private$fight.result[!fight.result_winner.is.left,]$didr
+      losers.r <- private$fight.result[!fight.result_winner.is.left,]$didl
+
+      win.times <- table(c(winners.l, winners.r))
+      lose.times <- table(c(losers.l, losers.r))
+      
+      # updates property
+      private$nwin[names(win.times) %>% as.numeric] <- win.times
+      private$nlose[names(lose.times) %>% as.numeric] <- lose.times
     }
   ),
 
@@ -37,15 +63,24 @@ tournament <- R6::R6Class(
   private = list(
     entry = NULL,
     
-    fight.result = NULL
+    fight.result = NULL,
+    nwin = NULL,
+    nlose = NULL
   ),
 
 # active binding ----------------------------------------------------------
 
   active = list(
+    results = function() private$fight.result,
     
     #' Player id matrix of past fight card
     #' 
-    result.pid = function() private$fight.result[, 1:2]
+    result.pid = function() private$fight.result[, 1:2],
+    
+    ndeck = function() private$entry$ndeck,
+    nplayer = function() private$entry$nplayer,
+    
+    nwins = function() private$nwin,
+    nloses = function() private$nlose
   )
 )
