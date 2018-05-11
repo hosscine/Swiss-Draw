@@ -5,8 +5,8 @@ require(myfs)
 tournament <- R6::R6Class(
   "tournament",
   
-# public field ------------------------------------------------------------
-
+  # public field ------------------------------------------------------------
+  
   public = list(
     
     initialize = function(entry){
@@ -22,18 +22,33 @@ tournament <- R6::R6Class(
     
     #' Checks if the fight card is a new card
     #'
-    #' @param p1 player1 id
-    #' @param p2 player2 id
+    #' @param d1 deck1 id
+    #' @param d2 deck2 id
     #' 
-    is.newFightCard = function(p1, p2){
-      card.lr <- c(p1, p2)
-      card.rl <- c(p2, p1)
+    is.newFightCard = function(d1, d2){
+      card.lr <- c(d1, d2)
+      card.rl <- c(d2, d1)
       
       is.conflict.lr <- FALSE %in% (rowMinus(self$result.pid, card.lr) %>% rowNorm %>% as.logical)
       is.conflict.rl <- FALSE %in% (rowMinus(self$result.pid, card.rl) %>% rowNorm %>% as.logical)
       
       return(!is.conflict.lr || is.conflict.rl)
     },
+    
+    #' Checks if the fight players is sampe
+    #'
+    #' @param d1 deck1 id
+    #' @param d2 deck2 id
+    #' 
+    is.samePlayersDeck = function(d1, d2) self$deck.player.id[d1] == self$deck.player.id[d2],
+    
+    #' Checks if the fight card is valid(the card is a new card and its player is not same)
+    #'
+    #' @param d1 deck1 id
+    #' @param d2 deck2 id
+    #' 
+    is.validFightCard = function(d1, d2)
+      self$is.newFightCard(d1, d2) && !self$is.samePlayersDeck(d1, d2),
     
     #' Updates number of win and lose of each decks
     #'
@@ -48,7 +63,7 @@ tournament <- R6::R6Class(
       # process in case right is win
       winners.r <- private$fight.result[!fight.result_winner.is.left,]$didr
       losers.r <- private$fight.result[!fight.result_winner.is.left,]$didl
-
+      
       win.times <- table(c(winners.l, winners.r))
       lose.times <- table(c(losers.l, losers.r))
       
@@ -57,48 +72,79 @@ tournament <- R6::R6Class(
       private$nlose[names(lose.times) %>% as.numeric] <- lose.times
     },
     
-    setNewFightCard <- function(){
-      # flags that each deck is incorporated or not
-      deck.done.flag <- logical(self$ndeck)
-      
-      # fight card vector
+    #' Sets new fight cards depending on \code{nwin}
+    #'
+    #' @param max.try max iteration times to find valid fight cards
+    #'
+    #' @return if failed to find valid fight cards, returns \code{FALSE}
+    #' 
+    setNewFightCard = function(max.try = 10){
+      try.times <- 1
+      # vector contains new fight card
       card <- numeric(0)
+      cardlen <- ifelse(self$ndeck %% 2 == 0, self$ndeck, self$ndeck - 1)
       
-      for (wint in 1:(private$nwin %>% unique %>% sort(decreasing = T))) {
-        # find candidates of fight card that won larger than "wint" and not set "done flag"
-        cand <- which(!deck.done.flag & private$nwin > wint)
+      # try untile gets complete new fight card ------------------------------------------
+      while(try.times < max.try && length(card) != cardlen){
+        # deck id orderd by nwin with randomly
+        deck.order <- private$shuffleOrder(private$nwin, decreasing = T)
         
-        # even random sort vector for cand
-        random <- ifelse(length(cand) %% 2 == 0, length(cand), length(card) - 1) %>% 
-          runif %>% sort
+        # decks that is not chosen for fight card
+        deck.not.chosen <- 1:self$ndeck
         
-        card <- c(card, cand[random])
-        deck.done.flag <- 1:self$ndeck %in% card
+        # initialize fight card and left/right deck target
+        card <- numeric(0)
+        l <- 1
+        r <- 2
+        
+        while (l < cardlen && r < cardlen) {
+          while (r < cardlen) {
+            # debugText(l, r, deck.order[c(l, r)], deck.order, deck.not.chosen)
+            # if a fight card(l and r) is valid card?
+            # when not valid, change r to next storongest deck
+            if (self$is.validFightCard(deck.order[l], deck.order[r])){
+              card <- c(card, deck.order[c(l, r)])
+              deck.not.chosen[c(l, r)] <- Inf
+              l <- min(deck.not.chosen)
+              r <- l + 1
+            }
+            else r <- r + 1
+          }
+        }
+        try.times <- try.times + 1
       }
       
+      private$fight.current <- data.frame(didl = card[1:(cardlen / 2) * 2 - 1],
+                                          didr = card[1:(cardlen / 2) * 2])
+      
+      if(length(card) == cardlen) return(FALSE)
+      else return(TRUE)
     }
     
   ),
-
-# private field -----------------------------------------------------------
-
+  
+  # private field -----------------------------------------------------------
+  
   private = list(
     entry = NULL,
+    
+    fight.current = NULL,
     
     fight.result = NULL,
     nwin = NULL,
     nlose = NULL,
     
-    shuffleOrder <- function(x){
+    shuffleOrder = function(x, decreasing = F){
       o <- order(runif(length(x)))
-      o[order(x[o])]
+      o[order(x[o], decreasing = decreasing)]
     }
   ),
-
-# active binding ----------------------------------------------------------
-
+  
+  # active binding ----------------------------------------------------------
+  
   active = list(
     results = function() private$fight.result,
+    fight.table = function() private$fight.current,
     
     #' Player id matrix of past fight card
     #' 
@@ -106,9 +152,10 @@ tournament <- R6::R6Class(
     
     ndeck = function() private$entry$ndeck,
     nplayer = function() private$entry$nplayer,
+    deck.player = function()private$entry$deck.player.id,
+    deck.player.id = function() private$entry$deck.player.id,
     
     nwins = function() private$nwin,
     nloses = function() private$nlose
   )
 )
-
