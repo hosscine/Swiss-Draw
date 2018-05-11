@@ -9,6 +9,12 @@ tournament <- R6::R6Class(
   
   public = list(
     
+    #' Construct method
+    #'
+    #' @param entry \code{entryData} object
+    #'
+    #' @return R6 object of tournament
+    #' 
     initialize = function(entry){
       private$entry <- entry
       
