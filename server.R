@@ -2,15 +2,15 @@ require(magrittr)
 
 source("entry_class.R")
 source("tournament_class.R")
-source("systems.R")
+# source("systems.R")
 source("history view.R")
 
 ent <- loadEntryData("sample.entry")
 tor <- startTournament(ent)
 
-data.kos <- cbind(numeric(nrow(data.deck)),data.deck[,2],
-                  data.member[as.numeric(data.deck[,3]),2],numeric(nrow(data.deck)))
-colnames(data.kos) <- c("順位","デッキ名","使用者","勝")
+# data.kos <- cbind(numeric(nrow(data.deck)),data.deck[,2],
+#                   data.member[as.numeric(data.deck[,3]),2],numeric(nrow(data.deck)))
+# colnames(data.kos) <- c("順位","デッキ名","使用者","勝")
 
 react.val <- shiny::reactiveValues(tornament = tor, sttext = NULL, title = "ROUND 0",
                                    save.time = "", values.history = NULL)
@@ -67,24 +67,24 @@ shinyServer(
     
     #### MainPanel ####
     output$deck.left <- renderUI({
-      lapply(1:(decks / 2), function(i){
+      lapply(1:tor$nfcard, function(i){
         selectInput(paste0("deckl", i), label = paste0("match", i), 
                     choices = ent$deck, selected = 0)
       })
     })
     output$deck.right <- renderUI({
-      lapply(1:(decks / 2), function(i){
+      lapply(1:tor$nfcard, function(i){
         selectInput(paste0("deckr",i ), label = "vs",
                     choices = ent$deck, selected = 0)
       })
     })
     output$result.left <- renderUI({
-      lapply(1:(decks / 2), function(i){
+      lapply(1:tor$nfcard, function(i){
         selectInput(paste0("resultl", i), label = paste0("result", i), choices = c("--", 0:2))
       })
     })
     output$result.right <- renderUI({
-      lapply(1:(decks / 2), function(i){
+      lapply(1:tor$nfcard, function(i){
         selectInput(paste0("resultr", i), label = "vs", choices = c("--", 0:2))
       })
     })

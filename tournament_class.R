@@ -19,6 +19,7 @@ tournament <- R6::R6Class(
       private$entry <- entry
       
       private$nwin <- private$nlose <- rep(0, self$ndeck)
+      private$nfight.card <- ifelse(self$ndeck %% 2 == 0, self$ndeck / 2, self$ndeck / 2 - 1)
       
       private$fight.result <- data.frame(didl = 1:4,
                                          didr = c(3,6,2,2),
@@ -88,7 +89,7 @@ tournament <- R6::R6Class(
       try.times <- 1
       # vector contains new fight card
       card <- numeric(0)
-      cardlen <- ifelse(self$ndeck %% 2 == 0, self$ndeck, self$ndeck - 1)
+      cardlen <- self$nfcard / 2
       
       # try untile gets complete new fight card ------------------------------------------
       while(try.times < max.try && length(card) != cardlen){
@@ -106,6 +107,7 @@ tournament <- R6::R6Class(
         while (l < cardlen && r < cardlen) {
           while (r < cardlen) {
             # debugText(l, r, deck.order[c(l, r)], deck.order, deck.not.chosen)
+            
             # if a fight card(l and r) is valid card?
             # when not valid, change r to next storongest deck
             if (self$is.validFightCard(deck.order[l], deck.order[r])){
@@ -139,6 +141,8 @@ tournament <- R6::R6Class(
     fight.result = NULL,
     nwin = NULL,
     nlose = NULL,
+    nfight.card = NULL,
+    current.round = 0,
     
     shuffleOrder = function(x, decreasing = F){
       o <- order(runif(length(x)))
@@ -158,10 +162,13 @@ tournament <- R6::R6Class(
     
     ndeck = function() private$entry$ndeck,
     nplayer = function() private$entry$nplayer,
+    nfcard = function() private$nfight.card,
+    
     deck.player = function()private$entry$deck.player.id,
     deck.player.id = function() private$entry$deck.player.id,
     
     nwins = function() private$nwin,
-    nloses = function() private$nlose
+    nloses = function() private$nlose,
+    round = function() private$current.round
   )
 )
