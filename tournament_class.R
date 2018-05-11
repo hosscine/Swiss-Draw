@@ -55,7 +55,29 @@ tournament <- R6::R6Class(
       # updates property
       private$nwin[names(win.times) %>% as.numeric] <- win.times
       private$nlose[names(lose.times) %>% as.numeric] <- lose.times
+    },
+    
+    setNewFightCard <- function(){
+      # flags that each deck is incorporated or not
+      deck.done.flag <- logical(self$ndeck)
+      
+      # fight card vector
+      card <- numeric(0)
+      
+      for (wint in 1:(private$nwin %>% unique %>% sort(decreasing = T))) {
+        # find candidates of fight card that won larger than "wint" and not set "done flag"
+        cand <- which(!deck.done.flag & private$nwin > wint)
+        
+        # even random sort vector for cand
+        random <- ifelse(length(cand) %% 2 == 0, length(cand), length(card) - 1) %>% 
+          runif %>% sort
+        
+        card <- c(card, cand[random])
+        deck.done.flag <- 1:self$ndeck %in% card
+      }
+      
     }
+    
   ),
 
 # private field -----------------------------------------------------------
@@ -65,7 +87,12 @@ tournament <- R6::R6Class(
     
     fight.result = NULL,
     nwin = NULL,
-    nlose = NULL
+    nlose = NULL,
+    
+    shuffleOrder <- function(x){
+      o <- order(runif(length(x)))
+      o[order(x[o])]
+    }
   ),
 
 # active binding ----------------------------------------------------------
@@ -84,3 +111,4 @@ tournament <- R6::R6Class(
     nloses = function() private$nlose
   )
 )
+
