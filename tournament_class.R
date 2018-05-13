@@ -60,6 +60,8 @@ tournament <- R6::R6Class(
     #' Updates number of win and lose of each decks
     #'
     updateWinLose = function(){
+      if (is.null(private$fight.result)) return()
+      
       # if left player of the fight.result is win?
       fight.result_winner.is.left <- private$fight.result$winl == 2
       
@@ -130,7 +132,10 @@ tournament <- R6::R6Class(
       
       if(length(card) == cardlen) return(FALSE)
       else return(TRUE)
-    }
+    },
+    
+    addFightResult = function(didl, didr, winl, winr)
+      private$fight.result <- rbind(private$fight.result, c(didl, didr, winl, winr))
     
   ),
   

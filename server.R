@@ -72,48 +72,54 @@ shinyServer(
         )
       })
     })
-
+    
     #### Ivents ####
     observeEvent(input$save, {
       
-      RV$error <- "ok"
-      
-      #勝敗記録をuiから収集
-      result <- data.frame(
-        didl = tor$fight.card.id$didl,
-        didr = tor$fight.card.id$didr,
-        winl = sapply(1:tor$nfcard, function(i) input[[paste0("resultl",i)]]),
-        winr = sapply(1:tor$nfcard, function(i) input[[paste0("resultr",i)]])
-      )
-      print(result)
-      
-      #有効な勝敗記録を登録
-      for (i in 1:ent$nplayer) {
-        # if result[i,] includes "--"
-        if(NA %in% suppressWarnings(result[i,] %>% as.character %>% as.numeric)) next
+      # 抽選が押される前は無視
+      if(nrow(tor$fight.card) > 0){        
+        RV$error <- ""
         
-        result.i <- result[i,]
-        if(!tor$is.validFightCard(result.i$didl, result.i$didr))
-          RV$error <- "Error: tied to submit non valid fight card"
+        #勝敗記録をuiから収集
+        result <- data.frame(
+          didl = tor$fight.card.id$didl,
+          didr = tor$fight.card.id$didr,
+          winl = sapply(1:tor$nfcard, function(i) input[[paste0("resultl",i)]]),
+          winr = sapply(1:tor$nfcard, function(i) input[[paste0("resultr",i)]])
+        )
         
-        else if(result.i$winl == result.i$winr)
-          RV$error <- "Error: includes invalid fight result both players win same times"
+        test <<- result
+        #有効な勝敗記録を登録
+        for (i in 1:ent$nplayer) {
+          # if result[i,] includes "--"
+          if(NA %in% suppressWarnings(result[i,] %>% as.matrix %>% as.numeric)) next
+          
+          # i行目の対戦カードと結果をリストに格納
+          result.i <- result[i,] %>% as.matrix %>% as.numeric %>% as.list
+          names(result.i) <- colnames(result)
+          
+          if(!tor$is.validFightCard(result.i$didl, result.i$didr)) next
+            # RV$error <- "Error: tried to submit non valid fight card"
+          
+          else if(result.i$winl == result.i$winr)
+            RV$error <- "Error: includes invalid fight result both players win same times"
+          
+          else if(!xor(result.i$winl == 2, result.i$winr == 2))
+            RV$error <- "Error: includes invalid fight result neither player win 2 times"
+          
+          # submit fight result here
+          else tor$addFightResult(didl = result.i$didl, didr = result.i$didr,
+                                  winl = result.i$winl, winr = result.i$winr)
+        }
         
-        else if(xor(result.i$winl == 2, result.i$winr == 2))
-          RV$error <- "Error: includes invalid fight result neither player win 2 times"
+        # 勝敗数を再計算
+        tor$updateWinLose()
+        RV$save.time <- paste("last saved", Sys.time()) 
         
-        # submit fight result here
-        else tor$addFightResult(result.i)
-        
+        # トーナメントを保存
+        save(tor, file = "korec.ko")
+        print(tor$results)
       }
-      
-      # 勝敗数を再計算
-      tor$updateWinLose()
-      RV$save.time <- paste("last saved", Sys.time()) 
-      
-      # トーナメントを保存
-      save(tor, file = "korec.ko")
-      
     })
     
     #抽選ボタン
@@ -151,7 +157,7 @@ shinyServer(
           data.history <- cbind(0, data.history)
           attr(data.history, "match.table") <- data.history.attr$match.table
         }
-          
+        
         RV$values.history <- data.history
         
         
