@@ -9,7 +9,8 @@ tor <- startTournament(ent)
 
 
 RV <- shiny::reactiveValues(error = "", round = 0, save.time = "",
-                            dnm = rep("NO ENTRY", tor$nfcard * 2))
+                            dnm = list(left = rep("NO ENTRY", tor$nfcard),
+                                       right = rep("NO ENTRY", tor$nfcard)))
 
 data.history <- NULL
 
@@ -62,10 +63,11 @@ shinyServer(
     output$fightrow <- renderUI({
       lapply(1:tor$nfcard, function(i){
         fluidRow(
-          column(3, offset = 1, h3(RV$dnm[i])),
-          column(3, h3(RV$dnm[i + tor$nfcard])),
+          column(3, h3(RV$dnm$left[i])),
+          column(1, h3("VS")),
+          column(3, h3(RV$dnm$right[i])),
           column(2, offset = 1,
-                 selectInput(paste0("resultl", i), label = "vs", choices = c("--", 0:2))),
+                 selectInput(paste0("resultl", i), label = "result", choices = c("--", 0:2))),
           column(2, selectInput(paste0("resultr", i), label = "vs", choices = c("--", 0:2)))
         )
       })
@@ -78,8 +80,8 @@ shinyServer(
       
       #勝敗記録をuiから収集
       result <- data.frame(
-        didl = sapply(1:tor$nfcard, function(i) which(ent$deck == input[[paste0("deckl",i)]])),
-        didr = sapply(1:tor$nfcard, function(i) which(ent$deck == input[[paste0("deckr",i)]])),
+        didl = sapply(1:tor$nfcard, function(i) which(ent$deck == RV$dnm$left[i])),
+        didr = sapply(1:tor$nfcard, function(i) which(ent$deck == RV$dnm$right[i])),
         winl = sapply(1:tor$nfcard, function(i) input[[paste0("resultl",i)]]),
         winr = sapply(1:tor$nfcard, function(i) input[[paste0("resultr",i)]])
       )
@@ -107,7 +109,6 @@ shinyServer(
       
       # 勝敗数を再計算
       tor$updateWinLose()
-      tor$ndeck %>% print
       RV$save.time <- paste("last saved", Sys.time()) 
       
       # トーナメントを保存
@@ -117,33 +118,25 @@ shinyServer(
     
     #抽選ボタン
     observeEvent(input$lottery,{
-      tor$setNewFightCard()
-      cards <- tor$fight.card %>% as.list %>% lapply(as.character)
-      print(cards)
-
       for (i in 1:tor$nfcard) {
-        # updateSelectInput(session, paste0("deckl", i), selected = cards$dnml[i])
-        # updateSelectInput(session, paste0("deckr", i), selected = cards$dnmr[i])
-        # updateSelectInput(session, paste0("deckl", i), selected = cards$dnml[i])
-        # updateSelectInput(session, paste0("deckr", i), selected = cards$dnmr[i])
         updateSelectInput(session, paste0("resultl", i), selected = "--")
         updateSelectInput(session, paste0("resultr", i), selected = "--")
       }
-
+      
+      tor$setNewFightCard()
+      RV$dnm <- tor$fight.card.list
       tor$round <- tor$round + 1
-      RV$dnm <- tor$fight.card.linear
       RV$round <- tor$round
     })
     
     #再抽選ボタン（ラウンドを進めない抽選）
     observeEvent(input$relottery,{
-      tor$setNewFightCard()
       for (i in 1:tor$nfcard) {
-        updateSelectInput(session, paste0("deckl", i), selected = tor$fight.card$dnml[i])
-        updateSelectInput(session, paste0("deckr", i), selected = tor$fight.card$dnmr[i])
         updateSelectInput(session, paste0("resultl", i), selected = "--")
         updateSelectInput(session, paste0("resultr", i), selected = "--")
       }
+      tor$setNewFightCard()
+      RV$dnm <- tor$fight.card.list
     })
     
     #load ko 機能
