@@ -161,16 +161,21 @@ tournament <- R6::R6Class(
   # active binding ----------------------------------------------------------
   
   active = list(
-    results = function() private$fight.result,
+    result = function() private$fight.result,
+    result.pid = function() private$fight.result[, 1:2],
+    result.complete = function(){
+      ret <- private$fight.result[, c(1, 3, 4, 2)]
+      ret$didl <- private$entry$deck[ret$didl]
+      ret$didr <- private$entry$deck[ret$didr]
+      colnames(ret) <- c("Deck1", "Win1", "Win2", "Deck2")
+      return(ret)
+    },
+    
     fight.card = function() data.frame(dnml = private$entry$deck[private$fight.current$didl],
                                        dnmr = private$entry$deck[private$fight.current$didr]),
     fight.card.id = function() private$fight.current,
     fight.card.list = function() list(left = as.character(self$fight.card$dnml),
                                       right = as.character(self$fight.card$dnmr)),
-    
-    #' Player id matrix of past fight card
-    #' 
-    result.pid = function() private$fight.result[, 1:2],
     
     ndeck = function() private$entry$ndeck,
     nplayer = function() private$entry$nplayer,

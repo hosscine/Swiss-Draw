@@ -22,12 +22,12 @@ shinyServer(
     ####################
     
     output$history <- renderTable({
-      tor$results
-    })
+      tor$result.complete
+    }, digits = 0)
     
     output$summary <- renderTable({
-      if(!is.null(tor$results)){
-        summary <- ShowKOSummary(tor$results)
+      if(!is.null(tor$result)){
+        summary <- ShowKOSummary(tor$result)
         rownames(summary) <- deck.user[,1]
         colnames(summary) <- c("圧勝", "辛勝", "惜敗", "惨敗")
         summary <- summary[order(summary[,1], summary[,2],
@@ -52,7 +52,7 @@ shinyServer(
     })
     
     output$kos <- renderTable({
-      tor$results
+      tor$result
     }, include.rownames=F)
     
     output$savetime <- renderText({
@@ -118,7 +118,7 @@ shinyServer(
         
         # トーナメントを保存
         save(tor, file = "korec.ko")
-        print(tor$results)
+        print(tor$result)
       }
     })
     
