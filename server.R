@@ -8,7 +8,7 @@ ent <- loadEntryData("sample2.entry")
 tor <- startTournament(ent)
 
 
-RV <- shiny::reactiveValues(error = "", round = 0, save.time = "",
+RV <- shiny::reactiveValues(error = "", round = 0, save.time = "", update = 0,
                             dnm = list(left = rep("NO ENTRY", tor$nfcard),
                                        right = rep("NO ENTRY", tor$nfcard)))
 
@@ -22,7 +22,8 @@ shinyServer(
     ####################
     
     output$history <- renderTable({
-      tor$result.complete
+      if (RV$update > 0)
+        tor$result.complete
     }, digits = 0)
     
     output$summary <- renderTable({
@@ -115,10 +116,12 @@ shinyServer(
         # 勝敗数を再計算
         tor$updateWinLose()
         RV$save.time <- paste("last saved", Sys.time()) 
+        RV$update <- RV$update + 1
         
         # トーナメントを保存
         save(tor, file = "korec.ko")
         print(tor$result)
+        test <<- tor$result
       }
     })
     
