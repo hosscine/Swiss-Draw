@@ -2,18 +2,13 @@ require(magrittr)
 
 source("entry_class.R")
 source("tournament_class.R")
-# source("systems.R")
 source("history view.R")
 
-ent <- loadEntryData("sample.entry")
+ent <- loadEntryData("sample2.entry")
 tor <- startTournament(ent)
 
-# data.kos <- cbind(numeric(nrow(data.deck)),data.deck[,2],
-#                   data.member[as.numeric(data.deck[,3]),2],numeric(nrow(data.deck)))
-# colnames(data.kos) <- c("順位","デッキ名","使用者","勝")
 
-react.val <- shiny::reactiveValues(tornament = tor, sttext = NULL, title = "ROUND 0",
-                                   save.time = "", values.history = NULL)
+RV <- shiny::reactiveValues(error = NULL, round = 0, save.time = "")
 
 data.history <- NULL
 
@@ -25,15 +20,12 @@ shinyServer(
     ####################
     
     output$history <- renderTable({
-      # hist <- cbind(react.val$values.history[, 1], ShowHistory(hist = react.val$values.history))
-      # if(!is.null(hist)) colnames(hist) <- c("Round", "Deck1", "Deck2", "Result1", "Result2")
-      # hist
-      react.val$tornamet$results
+      tor$results
     })
     
     output$summary <- renderTable({
-      if(!is.null(react.val$tornament$results)){
-        summary <- ShowKOSummary(react.val$tornament$results)
+      if(!is.null(tor$results)){
+        summary <- ShowKOSummary(tor$results)
         rownames(summary) <- deck.user[,1]
         colnames(summary) <- c("圧勝", "辛勝", "惜敗", "惨敗")
         summary <- summary[order(summary[,1], summary[,2],
@@ -49,58 +41,48 @@ shinyServer(
     
     #### TitlePanel ####
     output$title <- renderText({
-      react.val$title
+      paste("ROUND", RV$round)
     })
     
     #### SideBar ####
     output$status <- renderText({
-      react.val$sttext
+      RV$error
     })
     
     output$kos <- renderTable({
-      react.val$tornament$results
+      tor$results
     }, include.rownames=F)
     
     output$savetime <- renderText({
-      react.val$save.time
+      RV$save.time
     })
     
     #### MainPanel ####
     output$deck.left <- renderUI({
-      lapply(1:tor$nfcard, function(i){
-        selectInput(paste0("deckl", i), label = paste0("match", i), 
-                    choices = ent$deck, selected = 0)
-      })
+      lapply(paste0("deckl", 1:tor$nfcard ), textInput, label = "match", value = "")
     })
     output$deck.right <- renderUI({
-      lapply(1:tor$nfcard, function(i){
-        selectInput(paste0("deckr",i ), label = "vs",
-                    choices = ent$deck, selected = 0)
-      })
+      lapply(paste0("deckr", 1:tor$nfcard ), textInput, label = "vs", value = "")
     })
     output$result.left <- renderUI({
-      lapply(1:tor$nfcard, function(i){
-        selectInput(paste0("resultl", i), label = paste0("result", i), choices = c("--", 0:2))
-      })
+      lapply(paste0("resultl", 1:tor$nfcard), selectInput, label = "result", choices = c("--", 0:2))
     })
     output$result.right <- renderUI({
-      lapply(1:tor$nfcard, function(i){
-        selectInput(paste0("resultr", i), label = "vs", choices = c("--", 0:2))
-      })
+      lapply(paste0("resultr", 1:tor$nfcard), selectInput, label = "vs", choices = c("--", 0:2))
     })
     
     
     #### Ivents ####
     observeEvent(input$save, {
       
-      react.val$sttext <- "ok"
+      RV$error <- "ok"
       
       #勝敗記録をuiから収集
       result <- data.frame(
-        didl = sapply(1:(decks / 2), function(i) which(ent$deck == input[[paste0("deckl",i)]])),
-        didr = sapply(1:(decks / 2), function(i) which(ent$deck == input[[paste0("deckr",i)]])),
-        winl = sapply(1:(decks / 2), function(i) input[[paste0("resultl",i)]]),
-        winr = sapply(1:(decks / 2), function(i) input[[paste0("resultr",i)]])
+        didl = sapply(1:tor$nfcard, function(i) which(ent$deck == input[[paste0("deckl",i)]])),
+        didr = sapply(1:tor$nfcard, function(i) which(ent$deck == input[[paste0("deckr",i)]])),
+        winl = sapply(1:tor$nfcard, function(i) input[[paste0("resultl",i)]]),
+        winr = sapply(1:tor$nfcard, function(i) input[[paste0("resultr",i)]])
       )
       print(result)
       
@@ -111,48 +93,56 @@ shinyServer(
         
         result.i <- result[i,]
         if(!tor$is.validFightCard(result.i$didl, result.i$didr))
-          react.val$sttext <- "Error: tied to submit non valid fight card"
+          RV$error <- "Error: tied to submit non valid fight card"
         
         else if(result.i$winl == result.i$winr)
-          react.val$sttext <- "Error: includes invalid fight result both players win same times"
+          RV$error <- "Error: includes invalid fight result both players win same times"
         
         else if(xor(result.i$winl == 2, result.i$winr == 2))
-          react.val$sttext <- "Error: includes invalid fight result neither player win 2 times"
+          RV$error <- "Error: includes invalid fight result neither player win 2 times"
         
         # submit fight result here
-        else react.val$tornament$addFightResult(result.i)
+        else tor$addFightResult(result.i)
         
       }
       
       # 勝敗数を再計算
-      react.val$tornament$updateWinLose()
-      react.val$save.time <- paste("last saved", Sys.time()) 
+      tor$updateWinLose()
+      tor$ndeck %>% print
+      RV$save.time <- paste("last saved", Sys.time()) 
       
-      save(react.val$tornament, file = "korec.ko")
+      # トーナメントを保存
+      save(tor, file = "korec.ko")
       
     })
     
     #抽選ボタン
     observeEvent(input$lottery,{
-      opponent <- calcOponent(data.kos, data.history[, 2:5], react.val)
-      for (i in 1:(decks / 2)) {
-        updateSelectInput(session,paste0("deckl", i), selected = data.deck[opponent[i, 1], 2])
-        updateSelectInput(session,paste0("deckr", i), selected = data.deck[opponent[i, 2], 2])
-        updateSelectInput(session,paste0("resultl", i), selected = "--")
-        updateSelectInput(session,paste0("resultr", i), selected = "--")
+      tor$setNewFightCard()
+      cards <- tor$fight.card %>% as.list %>% lapply(as.character)
+      print(cards)
+
+      for (i in 1:tor$nfcard) {
+        # updateSelectInput(session, paste0("deckl", i), selected = cards$dnml[i])
+        # updateSelectInput(session, paste0("deckr", i), selected = cards$dnmr[i])
+        updateSelectInput(session, paste0("deckl", i), selected = cards$dnml[i])
+        updateSelectInput(session, paste0("deckr", i), selected = cards$dnmr[i])
+        updateSelectInput(session, paste0("resultl", i), selected = "--")
+        updateSelectInput(session, paste0("resultr", i), selected = "--")
       }
-      
-      react.val$title <- paste("ROUND", as.numeric(substring(react.val$title, 7))+1)
+
+      tor$round <- tor$round + 1
+      RV$round <- tor$round
     })
     
     #再抽選ボタン（ラウンドを進めない抽選）
     observeEvent(input$relottery,{
-      opponent <- calcOponent(data.kos, data.history[, 2:5], react.val)
-      for (i in 1:(decks / 2)) {
-        updateSelectInput(session,paste0("deckl", i), selected = data.deck[opponent[i, 1], 2])
-        updateSelectInput(session,paste0("deckr", i), selected = data.deck[opponent[i, 2], 2])
-        updateSelectInput(session,paste0("resultl", i), selected = "--")
-        updateSelectInput(session,paste0("resultr", i), selected = "--")
+      tor$setNewFightCard()
+      for (i in 1:tor$nfcard) {
+        updateSelectInput(session, paste0("deckl", i), selected = tor$fight.card$dnml[i])
+        updateSelectInput(session, paste0("deckr", i), selected = tor$fight.card$dnmr[i])
+        updateSelectInput(session, paste0("resultl", i), selected = "--")
+        updateSelectInput(session, paste0("resultr", i), selected = "--")
       }
     })
     
@@ -169,7 +159,7 @@ shinyServer(
           attr(data.history, "match.table") <- data.history.attr$match.table
         }
           
-        react.val$values.history <- data.history
+        RV$values.history <- data.history
         
         
         match.table <- attr(data.history, "match.table")
@@ -181,12 +171,12 @@ shinyServer(
           updateSelectInput(session, paste0("resultl", i), selected = match.table[i, 3])
           updateSelectInput(session, paste0("resultr", i), selected = match.table[i, 4])
         }
-        react.val$title <- paste("ROUND", as.numeric(attr(data.history, "round"), 7))
+        RV$round <- tor$round
         
         if (!is.null(data.history)) {
-          data.kos <<- calcKos(data.kos, data.history[, 2:5], react.val)
-          react.val$kos <- data.kos[order(as.numeric(data.kos[, 4]), decreasing = T),]
-          react.val$stext <- "Load completed."
+          data.kos <<- calcKos(data.kos, data.history[, 2:5], RV)
+          RV$kos <- data.kos[order(as.numeric(data.kos[, 4]), decreasing = T),]
+          RV$stext <- "Load completed."
         }
       }
     })
