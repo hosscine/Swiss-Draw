@@ -104,13 +104,16 @@ tournament <- R6::R6Class(
         l <- 1
         r <- 2
         
-        while (l < cardlen && r < cardlen) {
-          while (r < cardlen) {
+        while (l < cardlen && r <= cardlen) {
+          while (r <= cardlen) {
             # debugText(l, r, deck.order[c(l, r)], deck.order, deck.not.chosen, cardlen)
             
             # if a fight card(l and r) is valid card?
             # when not valid, change r to next storongest deck
-            if (self$is.validFightCard(deck.order[l], deck.order[r])){
+            if (self$is.validFightCard(deck.order[l], deck.order[r]) &&
+                deck.not.chosen[l] == l &&
+                deck.not.chosen[r] == r){
+              
               card <- c(card, deck.order[c(l, r)])
               deck.not.chosen[c(l, r)] <- Inf
               l <- min(deck.not.chosen)

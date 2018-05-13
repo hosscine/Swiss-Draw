@@ -80,8 +80,8 @@ shinyServer(
       
       #勝敗記録をuiから収集
       result <- data.frame(
-        didl = sapply(1:tor$nfcard, function(i) which(ent$deck == RV$dnm$left[i])),
-        didr = sapply(1:tor$nfcard, function(i) which(ent$deck == RV$dnm$right[i])),
+        didl = tor$fight.card.id$didl,
+        didr = tor$fight.card.id$didr,
         winl = sapply(1:tor$nfcard, function(i) input[[paste0("resultl",i)]]),
         winr = sapply(1:tor$nfcard, function(i) input[[paste0("resultr",i)]])
       )
