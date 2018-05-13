@@ -8,7 +8,7 @@ ent <- loadEntryData("sample2.entry")
 tor <- startTournament(ent)
 
 
-RV <- shiny::reactiveValues(error = NULL, round = 0, save.time = "")
+RV <- shiny::reactiveValues(error = "", round = 0, save.time = "", name = "デッキ名")
 
 data.history <- NULL
 
@@ -58,18 +58,37 @@ shinyServer(
     })
     
     #### MainPanel ####
-    output$deck.left <- renderUI({
-      lapply(paste0("deckl", 1:tor$nfcard ), textInput, label = "match", value = "")
+    # output$deck.left <- renderUI({
+    #   lapply(paste0("deckl", 1:tor$nfcard ), textInput, label = "match", value = "")
+    # })
+    # output$deck.right <- renderUI({
+    #   lapply(paste0("deckr", 1:tor$nfcard ), textInput, label = "vs", value = "")
+    # })
+    # output$result.left <- renderUI({
+    #   lapply(paste0("resultl", 1:tor$nfcard), selectInput, label = "result", choices = c("--", 0:2))
+    # })
+    # output$result.right <- renderUI({
+    #   lapply(paste0("resultr", 1:tor$nfcard), selectInput, label = "vs", choices = c("--", 0:2))
+    # })
+    
+    output$fightrow <- renderUI({
+      lapply(1:tor$nfcard, function(i){
+        fluidRow(
+          column(3, offset = 1, h3(RV$name)),
+          column(3, h3(RV$name)),
+          column(2, offset = 1,
+                 selectInput(paste0("resultl", i), label = "vs", choices = c("--", 0:2))),
+          column(2, selectInput(paste0("resultr", i), label = "vs", choices = c("--", 0:2)))
+        )
+      })
     })
-    output$deck.right <- renderUI({
-      lapply(paste0("deckr", 1:tor$nfcard ), textInput, label = "vs", value = "")
-    })
-    output$result.left <- renderUI({
-      lapply(paste0("resultl", 1:tor$nfcard), selectInput, label = "result", choices = c("--", 0:2))
-    })
-    output$result.right <- renderUI({
-      lapply(paste0("resultr", 1:tor$nfcard), selectInput, label = "vs", choices = c("--", 0:2))
-    })
+    
+    fluidRow(
+      column(3,offset = 1,uiOutput("deck.left")), # 左側の対戦者
+      column(3,uiOutput("deck.right")), # 右側の対戦者
+      column(2,offset = 1,uiOutput("result.left")), # 左側の結果入力
+      column(2,uiOutput("result.right")) # 右側の結果入力
+    )
     
     
     #### Ivents ####

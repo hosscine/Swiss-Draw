@@ -22,12 +22,7 @@ tagList(
 
 # 左側の対戦デッキと結果 -------------------------------------------------------------
                            mainPanel(
-                             fluidRow(
-                               column(3,offset = 1,uiOutput("deck.left")), # 左側の対戦者
-                               column(3,uiOutput("deck.right")), # 右側の対戦者
-                               column(2,offset = 1,uiOutput("result.left")), # 左側の結果入力
-                               column(2,uiOutput("result.right")) # 右側の結果入力
-                             ),
+                             uiOutput("fightrow"),
                              fluidRow(
                                column(6,offset = 3,textOutput("savetime")), # 最終保存時間
                                column(3,actionButton("save","成績記録")) # 保存ボタン
