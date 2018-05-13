@@ -157,6 +157,7 @@ tournament <- R6::R6Class(
     fight.card = function() data.frame(dnml = private$entry$deck[private$fight.current$didl],
                                        dnmr = private$entry$deck[private$fight.current$didr]),
     fight.card.id = function() private$fight.current,
+    fight.card.linear = function()self$fight.card %>% as.matrix %>% as.character,
     
     #' Player id matrix of past fight card
     #' 

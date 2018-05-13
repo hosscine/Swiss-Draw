@@ -8,7 +8,8 @@ ent <- loadEntryData("sample2.entry")
 tor <- startTournament(ent)
 
 
-RV <- shiny::reactiveValues(error = "", round = 0, save.time = "", name = "デッキ名")
+RV <- shiny::reactiveValues(error = "", round = 0, save.time = "",
+                            dnm = rep("NO ENTRY", tor$nfcard * 2))
 
 data.history <- NULL
 
@@ -58,39 +59,18 @@ shinyServer(
     })
     
     #### MainPanel ####
-    # output$deck.left <- renderUI({
-    #   lapply(paste0("deckl", 1:tor$nfcard ), textInput, label = "match", value = "")
-    # })
-    # output$deck.right <- renderUI({
-    #   lapply(paste0("deckr", 1:tor$nfcard ), textInput, label = "vs", value = "")
-    # })
-    # output$result.left <- renderUI({
-    #   lapply(paste0("resultl", 1:tor$nfcard), selectInput, label = "result", choices = c("--", 0:2))
-    # })
-    # output$result.right <- renderUI({
-    #   lapply(paste0("resultr", 1:tor$nfcard), selectInput, label = "vs", choices = c("--", 0:2))
-    # })
-    
     output$fightrow <- renderUI({
       lapply(1:tor$nfcard, function(i){
         fluidRow(
-          column(3, offset = 1, h3(RV$name)),
-          column(3, h3(RV$name)),
+          column(3, offset = 1, h3(RV$dnm[i])),
+          column(3, h3(RV$dnm[i + tor$nfcard])),
           column(2, offset = 1,
                  selectInput(paste0("resultl", i), label = "vs", choices = c("--", 0:2))),
           column(2, selectInput(paste0("resultr", i), label = "vs", choices = c("--", 0:2)))
         )
       })
     })
-    
-    fluidRow(
-      column(3,offset = 1,uiOutput("deck.left")), # 左側の対戦者
-      column(3,uiOutput("deck.right")), # 右側の対戦者
-      column(2,offset = 1,uiOutput("result.left")), # 左側の結果入力
-      column(2,uiOutput("result.right")) # 右側の結果入力
-    )
-    
-    
+
     #### Ivents ####
     observeEvent(input$save, {
       
@@ -107,7 +87,7 @@ shinyServer(
       
       #有効な勝敗記録を登録
       for (i in 1:ent$nplayer) {
-        # if result[i,] include "--"
+        # if result[i,] includes "--"
         if(NA %in% suppressWarnings(result[i,] %>% as.character %>% as.numeric)) next
         
         result.i <- result[i,]
@@ -144,13 +124,14 @@ shinyServer(
       for (i in 1:tor$nfcard) {
         # updateSelectInput(session, paste0("deckl", i), selected = cards$dnml[i])
         # updateSelectInput(session, paste0("deckr", i), selected = cards$dnmr[i])
-        updateSelectInput(session, paste0("deckl", i), selected = cards$dnml[i])
-        updateSelectInput(session, paste0("deckr", i), selected = cards$dnmr[i])
+        # updateSelectInput(session, paste0("deckl", i), selected = cards$dnml[i])
+        # updateSelectInput(session, paste0("deckr", i), selected = cards$dnmr[i])
         updateSelectInput(session, paste0("resultl", i), selected = "--")
         updateSelectInput(session, paste0("resultr", i), selected = "--")
       }
 
       tor$round <- tor$round + 1
+      RV$dnm <- tor$fight.card.linear
       RV$round <- tor$round
     })
     
