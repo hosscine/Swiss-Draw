@@ -121,7 +121,7 @@ shinyServer(
         # トーナメントを保存
         save(tor, file = "korec.ko")
         print(tor$result)
-        test <<- tor$result
+        test <<- tor$clone()
       }
     })
     
