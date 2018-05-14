@@ -131,8 +131,9 @@ shinyServer(
         updateSelectInput(session, paste0("resultr", i), selected = "--")
       }
       
-      tor$setNewFightCard()
+      error <- tor$setNewFightCard()
       RV$dnm <- tor$fight.card.list
+      RV$error <- ifelse(error, "Error: lottery failed", "")
       tor$round <- tor$round + 1
       RV$round <- tor$round
     })
@@ -143,7 +144,8 @@ shinyServer(
         updateSelectInput(session, paste0("resultl", i), selected = "--")
         updateSelectInput(session, paste0("resultr", i), selected = "--")
       }
-      tor$setNewFightCard()
+      error <- tor$setNewFightCard()
+      RV$error <- ifelse(error, "Error: lottery failed", "")
       RV$dnm <- tor$fight.card.list
     })
     
@@ -160,7 +162,6 @@ shinyServer(
         for (i in 1:tor$nfcard) {
           l <- tor$fight.card.id$didl[i]
           r <- tor$fight.card.id$didr[i]
-          debugText(l,r)
           if (!tor$is.newFightCard(l, r)){
             result.i <- tor$result[tor$result$didl == l & tor$result$didr == r,]
             updateSelectInput(session, paste0("resultl", i), selected = result.i$winl)
