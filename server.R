@@ -1,13 +1,3 @@
-require(magrittr)
-
-source("entry_class.R")
-source("tournament_class.R")
-source("history view.R")
-
-# save(deck, member, title, file = "sample3.entry")
-ent <- loadEntryData("sample3.entry")
-tor <- startTournament(ent)
-
 
 RV <- shiny::reactiveValues(error = "", round = 0, save.time = "", update = 0,
                             dnm = list(left = rep("NO ENTRY", tor$nfcard),
