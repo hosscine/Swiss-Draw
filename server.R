@@ -28,10 +28,9 @@ shinyServer(
     
     output$summary <- renderTable({
       if (RV$update > 0){
-        sm <- tor$result.summary
-        sm <- sm[tor$ranking.id,]
+        sm <- tor$result.summary[tor$ranking.id,]
         colnames(sm) <- c("圧勝", "辛勝", "惜敗", "惨敗")
-        data.frame(sm)
+        sm
       }
     }, include.rownames=T, digits = 0)
     
@@ -51,8 +50,12 @@ shinyServer(
     })
     
     output$kos <- renderTable({
-      tor$result
-    }, include.rownames=F)
+      if (RV$update > 0){
+        sm <- tor$ranking.summary[tor$ranking.id,]
+        colnames(sm) <- c("順位", "デッキ", "使用者", "勝")
+        sm
+      }
+    }, include.rownames=F, digit = 0)
     
     output$savetime <- renderText({
       RV$save.time

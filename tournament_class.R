@@ -78,10 +78,10 @@ tournament <- R6::R6Class(
       # process in case left deck is win
       result.winl <- private$fight.result[fight.result_winner.is.left,]
       
-      winner2_0 <- result.winl[result.winl$winr == 0]$didl
-      winner2_1 <- result.winl[result.winl$winr == 1]$didl
-      loser1_2 <- result.winl[result.winl$winr == 1]$didr
-      loser0_2 <- result.winl[result.winl$winr == 0]$didr
+      winner2_0 <- result.winl[result.winl$winr == 0,]$didl
+      winner2_1 <- result.winl[result.winl$winr == 1,]$didl
+      loser1_2 <- result.winl[result.winl$winr == 1,]$didr
+      loser0_2 <- result.winl[result.winl$winr == 0,]$didr
       
       # process in case right deck is win
       result.winr <- private$fight.result[!fight.result_winner.is.left,]
@@ -208,10 +208,12 @@ tournament <- R6::R6Class(
       return(ret)
     },
     result.summary = function() private$fight.result.summary,
+    
     ranking = function() private$entry$deck[private$deck.ranking],
     ranking.id = function() private$deck.ranking,
-    ranking.summary = function() data.frame(rank = self$ranking.id, deck = private$entry$deck,
-                                            player = private$entry$deck.user, win = private$nwin),
+    ranking.summary = function() data.frame(rank = order(self$ranking.id),
+                                            deck = private$entry$deck,
+                                            player = private$entry$deck.player, win = private$nwin),
     
     fight.card = function() data.frame(dnml = private$entry$deck[private$fight.current$didl],
                                        dnmr = private$entry$deck[private$fight.current$didr]),
