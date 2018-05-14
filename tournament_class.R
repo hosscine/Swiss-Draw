@@ -19,10 +19,13 @@ tournament <- R6::R6Class(
       private$entry <- entry
       
       private$nwin <- private$nlose <- rep(0, self$ndeck)
-      private$fight.result.summary <- matrix(0, nrow = 1:self$ndeck, ncol = 4,
-                                             dimnames = list(private$entry$deck,
-                                                             c("w2_0", "w2_1", "l1_2", "l0_2")))
+      private$fight.result.summary <- 
+        data.frame(matrix(0, nrow = self$ndeck, ncol = 4,
+                          dimnames = list(private$entry$deck,
+                                          c("w2_0", "w2_1", "l1_2", "l0_2"))))
+      
       private$nfight.card <- ifelse(self$ndeck %% 2 == 0, self$ndeck / 2, self$ndeck / 2 - 1)
+      private$deck.ranking <- 1:self$ndeck
       
       # private$fight.result <- data.frame(didl = NA, didr = NA,
                                          # winl = NA, winr = NA)[numeric(0),]
@@ -41,11 +44,12 @@ tournament <- R6::R6Class(
     is.newFightCard = function(d1, d2){
       card.lr <- c(d1, d2)
       card.rl <- c(d2, d1)
+      result.pid <- private$fight.result[,1:2]
       
-      is.conflict.lr <- FALSE %in% (rowMinus(self$result.pid, card.lr) %>% rowNorm %>% as.logical)
-      is.conflict.rl <- FALSE %in% (rowMinus(self$result.pid, card.rl) %>% rowNorm %>% as.logical)
+      is.conflict.lr <- FALSE %in% (rowMinus(result.pid, card.lr) %>% rowNorm %>% as.logical)
+      is.conflict.rl <- FALSE %in% (rowMinus(result.pid, card.rl) %>% rowNorm %>% as.logical)
       
-      return(!is.conflict.lr || is.conflict.rl)
+      return(!is.conflict.lr || !is.conflict.rl)
     },
     
     #' Checks if the fight players is sampe
@@ -66,7 +70,7 @@ tournament <- R6::R6Class(
     #' Updates number of win and lose of each decks
     #'
     updateWinLose = function(){
-      if (nrow(private$fight.result) == 0) return()
+      if (nrow(private$fight.result) == 0) return(1)
       
       # if left player of the fight.result is win?
       fight.result_winner.is.left <- private$fight.result$winl == 2
@@ -78,30 +82,35 @@ tournament <- R6::R6Class(
       winner2_1 <- result.winl[result.winl$winr == 1]$didl
       loser1_2 <- result.winl[result.winl$winr == 1]$didr
       loser0_2 <- result.winl[result.winl$winr == 0]$didr
-            
+      
       # process in case right deck is win
       result.winr <- private$fight.result[!fight.result_winner.is.left,]
       
-      winner2_0 <- c(winner2_0, result.winr[result.winr$winl == 0]$didr)
-      winner2_1 <- c(winner2_1, result.winr[result.winr$winl == 1]$didr)
-      loser1_2 <- c(loser1_2, result.winr[result.winr$winl == 1]$didl)
-      loser0_2 <- c(loser0_2, result.winr[result.winr$winl == 0]$didl)
+      winner2_0 <- c(winner2_0, result.winr[result.winr$winl == 0,]$didr)
+      winner2_1 <- c(winner2_1, result.winr[result.winr$winl == 1,]$didr)
+      loser1_2 <- c(loser1_2, result.winr[result.winr$winl == 1,]$didl)
+      loser0_2 <- c(loser0_2, result.winr[result.winr$winl == 0,]$didl)
       
       # cross tabulation
       win.times <- table(c(winner2_0, winner2_1))
       lose.times <- table(c(loser0_2, loser1_2))
       win2_0.times <- table(winner2_0)
       win2_1.times <- table(winner2_1)
-      loser1_2.times <- table(loser1_2)
-      loser0_2.times <- table(loser0_2)
-
+      lose1_2.times <- table(loser1_2)
+      lose0_2.times <- table(loser0_2)
+      
       # updates property
       private$nwin[names(win.times) %>% as.numeric] <- win.times
       private$nlose[names(lose.times) %>% as.numeric] <- lose.times
-      private$fight.result.summary[names(win2_0.times) %>% as.numeric, "w2_0"]
-      private$fight.result.summary[names(win2_1.times) %>% as.numeric, "w2_1"]
-      private$fight.result.summary[names(win1_2.times) %>% as.numeric, "l1_2"]
-      private$fight.result.summary[names(win0_2.times) %>% as.numeric, "l0_2"]
+      private$fight.result.summary[names(win2_0.times) %>% as.numeric,]$w2_0 <- win2_0.times
+      private$fight.result.summary[names(win2_1.times) %>% as.numeric,]$w2_1 <- win2_1.times
+      private$fight.result.summary[names(lose1_2.times) %>% as.numeric,]$l1_2 <- lose1_2.times
+      private$fight.result.summary[names(lose0_2.times) %>% as.numeric,]$l0_2 <- lose0_2.times
+      
+      private$deck.ranking <- order(private$fight.result.summary$w2_0,
+                                    private$fight.result.summary$w2_1,
+                                    -private$fight.result.summary$l1_2,
+                                    -private$fight.result.summary$l0_2, decreasing = T)
     },
     
     #' Sets new fight cards depending on \code{nwin}
@@ -176,6 +185,8 @@ tournament <- R6::R6Class(
       
     nwin = NULL,
     nlose = NULL,
+    
+    deck.ranking = NULL,
     nfight.card = NULL,
     current.round = 0,
     
@@ -189,7 +200,6 @@ tournament <- R6::R6Class(
   
   active = list(
     result = function() private$fight.result,
-    result.pid = function() private$fight.result[, 1:2],
     result.complete = function(){
       ret <- private$fight.result[, c(1, 3, 4, 2)]
       ret$didl <- private$entry$deck[ret$didl]
@@ -197,6 +207,11 @@ tournament <- R6::R6Class(
       colnames(ret) <- c("Deck1", "Win1", "Win2", "Deck2")
       return(ret)
     },
+    result.summary = function() private$fight.result.summary,
+    ranking = function() private$entry$deck[private$deck.ranking],
+    ranking.id = function() private$deck.ranking,
+    ranking.summary = function() data.frame(rank = self$ranking.id, deck = private$entry$deck,
+                                            player = private$entry$deck.user, win = private$nwin),
     
     fight.card = function() data.frame(dnml = private$entry$deck[private$fight.current$didl],
                                        dnmr = private$entry$deck[private$fight.current$didr]),

@@ -27,15 +27,13 @@ shinyServer(
     }, digits = 0)
     
     output$summary <- renderTable({
-      if(!is.null(tor$result)){
-        summary <- ShowKOSummary(tor$result)
-        rownames(summary) <- deck.user[,1]
-        colnames(summary) <- c("圧勝", "辛勝", "惜敗", "惨敗")
-        summary <- summary[order(summary[,1], summary[,2],
-                                 summary[,3], summary[,4], decreasing = T),]
-        summary
+      if (RV$update > 0){
+        sm <- tor$result.summary
+        sm <- sm[tor$ranking.id,]
+        colnames(sm) <- c("圧勝", "辛勝", "惜敗", "惨敗")
+        data.frame(sm)
       }
-    }, include.rownames=T)
+    }, include.rownames=T, digits = 0)
     
     
     ####################
