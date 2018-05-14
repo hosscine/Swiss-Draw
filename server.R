@@ -4,15 +4,14 @@ source("entry_class.R")
 source("tournament_class.R")
 source("history view.R")
 
-ent <- loadEntryData("sample2.entry")
+# save(deck, member, title, file = "sample3.entry")
+ent <- loadEntryData("sample3.entry")
 tor <- startTournament(ent)
 
 
 RV <- shiny::reactiveValues(error = "", round = 0, save.time = "", update = 0,
                             dnm = list(left = rep("NO ENTRY", tor$nfcard),
                                        right = rep("NO ENTRY", tor$nfcard)))
-
-data.history <- NULL
 
 shinyServer(
   function(input, output, session) {
@@ -22,8 +21,7 @@ shinyServer(
     ####################
     
     output$history <- renderTable({
-      if (RV$update > 0)
-        tor$result.complete
+      if (RV$update > 0) tor$result.complete
     }, digits = 0)
     
     output$summary <- renderTable({
@@ -82,7 +80,7 @@ shinyServer(
       if(nrow(tor$fight.card) > 0){        
         RV$error <- ""
         
-        #勝敗記録をuiから収集
+        # 勝敗記録をuiから収集
         result <- data.frame(
           didl = tor$fight.card.id$didl,
           didr = tor$fight.card.id$didr,
@@ -91,7 +89,7 @@ shinyServer(
         )
         
         test <<- result
-        #有効な勝敗記録を登録
+        # 有効な勝敗記録を登録
         for (i in 1:ent$nplayer) {
           # if result[i,] includes "--"
           if(NA %in% suppressWarnings(result[i,] %>% as.matrix %>% as.numeric)) next
@@ -116,17 +114,17 @@ shinyServer(
         
         # 勝敗数を再計算
         tor$updateWinLose()
-        RV$save.time <- paste("last saved", Sys.time()) 
+        RV$save.time <- paste("Last Saved --", format(Sys.time(), "%b月%d日 %H時%M分")) 
         RV$update <- RV$update + 1
         
         # トーナメントを保存
-        save(tor, file = "korec.ko")
-        print(tor$result)
-        test <<- tor$clone()
+        save(tor, file = paste0(tor$tournament.name, ".tornament"))
+        # print(tor$result)
+        # test <<- tor$clone()
       }
     })
     
-    #抽選ボタン
+    # 抽選ボタン
     observeEvent(input$lottery,{
       for (i in 1:tor$nfcard) {
         updateSelectInput(session, paste0("resultl", i), selected = "--")
@@ -139,7 +137,7 @@ shinyServer(
       RV$round <- tor$round
     })
     
-    #再抽選ボタン（ラウンドを進めない抽選）
+    # 再抽選ボタン（ラウンドを進めない抽選）
     observeEvent(input$relottery,{
       for (i in 1:tor$nfcard) {
         updateSelectInput(session, paste0("resultl", i), selected = "--")
@@ -149,38 +147,30 @@ shinyServer(
       RV$dnm <- tor$fight.card.list
     })
     
-    #load ko 機能
-    observeEvent(input$kofile,{
-      if (is.null(input$kofile) == F) {
-        load(paste0("./", input$kofile[1]))
-        data.history <<- data.history
-        
-        # for .ko file ver2.2 early
-        if(ncol(data.history) == 4){
-          data.history.attr <- attributes(data.history)
-          data.history <- cbind(0, data.history)
-          attr(data.history, "match.table") <- data.history.attr$match.table
-        }
-        
-        RV$values.history <- data.history
-        
-        
-        match.table <- attr(data.history, "match.table")
-        for (i in 1:(decks / 2)) {
-          updateSelectInput(session, paste0("deckl", i),
-                            selected = data.deck[as.numeric(match.table[i, 1]), 2])
-          updateSelectInput(session, paste0("deckr", i),
-                            selected = data.deck[as.numeric(match.table[i, 2]), 2])
-          updateSelectInput(session, paste0("resultl", i), selected = match.table[i, 3])
-          updateSelectInput(session, paste0("resultr", i), selected = match.table[i, 4])
-        }
+    # load tournament 機能
+    observeEvent(input$tofile,{
+      if (!is.null(input$tofile)) {
+        load(input$tofile$name)
+        tor <<- tor
+        RV$error <- "Message: load complete"
         RV$round <- tor$round
+        RV$update <- RV$update + 1
         
-        if (!is.null(data.history)) {
-          data.kos <<- calcKos(data.kos, data.history[, 2:5], RV)
-          RV$kos <- data.kos[order(as.numeric(data.kos[, 4]), decreasing = T),]
-          RV$stext <- "Load completed."
-        }
+        RV$dnm <- tor$fight.card.list
+        for (i in 1:tor$nfcard) {
+          l <- tor$fight.card.id$didl[i]
+          r <- tor$fight.card.id$didr[i]
+          debugText(l,r)
+          if (!tor$is.newFightCard(l, r)){
+            result.i <- tor$result[tor$result$didl == l & tor$result$didr == r,]
+            updateSelectInput(session, paste0("resultl", i), selected = result.i$winl)
+            updateSelectInput(session, paste0("resultr", i), selected = result.i$winr)
+          }
+          else{
+            updateSelectInput(session, paste0("resultl", i), selected = "--")
+            updateSelectInput(session, paste0("resultr", i), selected = "--")
+          }
+        }        
       }
     })
     

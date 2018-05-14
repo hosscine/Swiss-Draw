@@ -2,7 +2,7 @@
 loadEntryData <- function(file = "sample2.entry"){
   load(file)
   ent <- entryData$new(deck.names = as.character(deck$deck.name), deck.player.id = deck$member.id,
-                       player.names = member)
+                       player.names = member, entry.title = title)
   return(ent)
 }
 
@@ -13,7 +13,8 @@ entryData <- R6::R6Class(
   # public field ------------------------------------------------------------
 
   public = list(
-    initialize = function(deck.names, deck.player.id, player.names){
+    initialize = function(deck.names, deck.player.id, player.names, entry.title){
+      private$titlename <- entry.title 
       private$decks <- deck.names
       private$decks.player.id <- deck.player.id
       private$players <- player.names
@@ -23,6 +24,8 @@ entryData <- R6::R6Class(
   # private field -----------------------------------------------------------
 
   private = list(
+    titlename = NULL,
+    
     decks = NULL,
     decks.player.id = NULL,
     
@@ -32,6 +35,7 @@ entryData <- R6::R6Class(
   # active binding-----------------------------------------------------------
 
   active = list(
+    title = function() private$titlename,
     
     # deck property ------------------------------------------
     ndeck = function() private$decks %>% length,

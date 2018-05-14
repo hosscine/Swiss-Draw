@@ -17,7 +17,7 @@ tagList(
                              actionButton("lottery","抽選"),
                              actionButton("relottery","再抽選"),
                              hr(),
-                             fileInput("kofile","koファイル読み込み")
+                             fileInput("tofile",".tournamentファイル読み込み")
                            ),
 
 # 左側の対戦デッキと結果 -------------------------------------------------------------

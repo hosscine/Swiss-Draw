@@ -199,6 +199,8 @@ tournament <- R6::R6Class(
   # active binding ----------------------------------------------------------
   
   active = list(
+    tournament.name = function() private$entry$title,
+    
     result = function() private$fight.result,
     result.complete = function(){
       ret <- private$fight.result[, c(1, 3, 4, 2)]
