@@ -49,7 +49,7 @@ tournament <- R6::R6Class(
       is.conflict.lr <- FALSE %in% (rowMinus(result.pid, card.lr) %>% rowNorm %>% as.logical)
       is.conflict.rl <- FALSE %in% (rowMinus(result.pid, card.rl) %>% rowNorm %>% as.logical)
       
-      return(!is.conflict.lr || !is.conflict.rl)
+      return(!is.conflict.lr && !is.conflict.rl)
     },
     
     #' Checks if the fight players is sampe
