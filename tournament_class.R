@@ -177,6 +177,15 @@ tournament <- R6::R6Class(
     addFightResult = function(didl, didr, winl, winr){
       private$fight.result <- rbind(private$fight.result, c(didl, didr, winl, winr))
       colnames(private$fight.result) <- c("didl", "didr", "winl", "winr")
+    },
+    
+    #' Sets modified fight result
+    #'
+    #' @param new.fight.result 
+    #'
+    modifyFightResult = function(new.fight.result){
+      private$fight.result <- new.fight.result
+      self$updateWinLose()
     }
     
   ),
