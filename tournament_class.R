@@ -27,13 +27,12 @@ tournament <- R6::R6Class(
       private$nfight.card <- ifelse(self$ndeck %% 2 == 0, self$ndeck / 2, self$ndeck / 2 - 1)
       private$deck.ranking <- 1:self$ndeck
       
-      # private$fight.result <- data.frame(didl = NA, didr = NA,
-                                         # winl = NA, winr = NA)[numeric(0),]
-      # private$fight.result.summary <- data.frame()
-      private$fight.result <- data.frame(didl = 1:4,
-                                         didr = c(3,6,2,2),
-                                         winl = c(2, 1, 0, 0),
-                                         winr = c(1, 2, 2, 2))
+      private$fight.result <- data.frame(didl = NA, didr = NA,
+                                         winl = NA, winr = NA)[numeric(0),]
+      # private$fight.result <- data.frame(didl = 1:4,
+      #                                    didr = c(3,6,2,2),
+      #                                    winl = c(2, 1, 0, 0),
+      #                                    winr = c(1, 2, 2, 2))
     },
     
     #' Checks if the fight card is a new card
@@ -42,6 +41,8 @@ tournament <- R6::R6Class(
     #' @param d2 deck2 id
     #' 
     is.newFightCard = function(d1, d2){
+      if (nrow(private$fight.result) == 0) return(TRUE)
+      
       card.lr <- c(d1, d2)
       card.rl <- c(d2, d1)
       result.pid <- private$fight.result[,1:2]
@@ -120,8 +121,6 @@ tournament <- R6::R6Class(
     #' @return if failed to find valid fight cards, returns \code{FALSE}
     #' 
     setNewFightCard = function(max.try = 10){
-      if (nrow(private$fight.result) == 0) return(TRUE)
-      
       try.times <- 1
       # vector contains new fight card
       card <- numeric(0)
@@ -168,8 +167,17 @@ tournament <- R6::R6Class(
       else return(TRUE)
     },
     
-    addFightResult = function(didl, didr, winl, winr)
+    #' Adds fight result
+    #'
+    #' @param didl deck1 id
+    #' @param didr deck2 id
+    #' @param winl number of times of deck1 win
+    #' @param winr number of times of deck2 win
+    #'
+    addFightResult = function(didl, didr, winl, winr){
       private$fight.result <- rbind(private$fight.result, c(didl, didr, winl, winr))
+      colnames(private$fight.result) <- c("didl", "didr", "winl", "winr")
+    }
     
   ),
   
