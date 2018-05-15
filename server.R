@@ -142,12 +142,14 @@ shinyServer(
     # load tournament 機能
     observeEvent(input$tofile,{
       if (!is.null(input$tofile)) {
+        # トーナメントファイルを読み込み
         load(input$tofile$name)
         tor <<- tor
         RV$error <- "Message: load complete"
         RV$round <- tor$round
         RV$update <- RV$update + 1
         
+        # 読み込んだトーナメントファイルを対戦テーブルに反映
         RV$dnm <- tor$fight.card.list
         for (i in 1:tor$nfcard) {
           l <- tor$fight.card.id$didl[i]
@@ -161,7 +163,8 @@ shinyServer(
             updateSelectInput(session, paste0("resultl", i), selected = "--")
             updateSelectInput(session, paste0("resultr", i), selected = "--")
           }
-        }        
+        }
+        
       }
     })
     
