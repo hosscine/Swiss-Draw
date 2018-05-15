@@ -1,8 +1,14 @@
 require(magrittr)
+require(myfs)
 
 source("entry_class.R")
 source("tournament_class.R")
 
-# save(deck, member, title, file = "sample3.entry")
-ent <- loadEntryData("sample3.entry")
-tor <- startTournament(ent)
+# save(deck, member, title, file = "sample.entry")
+
+if (file.exists(".default")){
+  load(".default")
+  load("default.tournament")
+}
+if (!file.exists(".default")) load("sample.tournament")
+ent <- tor$get.entry

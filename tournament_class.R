@@ -1,7 +1,5 @@
 startTournament <- function(entry) tournament$new(entry)
 
-require(myfs)
-
 tournament <- R6::R6Class(
   "tournament",
   
@@ -217,6 +215,7 @@ tournament <- R6::R6Class(
   
   active = list(
     tournament.name = function() private$entry$title,
+    get.entry = function() private$entry,
     
     result = function() private$fight.result,
     result.complete = function(){
