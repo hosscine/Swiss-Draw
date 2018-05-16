@@ -108,7 +108,7 @@ shinyServer(
         RV$update <- RV$update + 1
         
         # トーナメントを保存
-        save(tor, file = paste0(tor$tournament.name, ".tornament"))
+        save(tor, file = paste0(tor$tournament.name, ".tournament"))
         # print(tor$result)
         # test <<- tor$clone()
       }
