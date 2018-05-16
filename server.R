@@ -80,7 +80,7 @@ shinyServer(
         
         test <<- result
         # 有効な勝敗記録を登録
-        for (i in 1:ent$nplayer) {
+        for (i in 1:tor$nplayer) {
           # if result[i,] includes "--"
           if(NA %in% suppressWarnings(result[i,] %>% as.matrix %>% as.numeric)) next
           

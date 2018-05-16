@@ -4,6 +4,7 @@
   # magrittr
   # R6
 
+require(magrittr)
 source("entry_class.R")
 source("tournament_class.R")
 
@@ -19,7 +20,7 @@ member <- c("A", "B")
 # edit deck.name and deck.player.id ---------------------------------------
 deck <- data.frame(
   deck.names = c("Kaiju", "Kozmo"),
-  deck.player.id = c(1, 2)
+  member.id = c(1, 2)
 )
 
 # save(deck, member, title, file = "entry_name.entry")
