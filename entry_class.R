@@ -1,6 +1,6 @@
 
-loadEntryData <- function(file = "sample2.entry"){
-  load(file)
+loadEntryData <- function(file){
+  if(!missing(file)) load(file)
   ent <- entryData$new(deck.names = as.character(deck$deck.name), deck.player.id = deck$member.id,
                        player.names = member, entry.title = title)
   return(ent)
