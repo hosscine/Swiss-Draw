@@ -1,45 +1,26 @@
-# 
-# # This is the server logic for a Shiny web application.
-# # You can find out more about building applications with Shiny here:
-# #
-# # http://shiny.rstudio.com
-# #
-# 
-library(shiny)
 
-# source("entry.txt")
-load("sample.entry")
-source("systems.R")
-source("history view.R")
-data.kos <- cbind(numeric(nrow(data.deck)),data.deck[,2],data.member[as.numeric(data.deck[,3]),2],numeric(nrow(data.deck)))
-colnames(data.kos) <- c("順位","デッキ名","使用者","勝")
-
-values <- reactiveValues(kos = data.kos, sttext = NULL,title = "ROUND 0",save.time = "", values.history = NULL)
-
-data.history <- NULL
+RV <- shiny::reactiveValues(error = "", round = 0, save.time = "", update = 0,
+                            dnm = list(left = rep("NO ENTRY", tor$nfcard),
+                                       right = rep("NO ENTRY", tor$nfcard)))
 
 shinyServer(
-  function(input, output,session) {
+  function(input, output, session) {
     
     ####################
     # Ranking View
     ####################
     
     output$history <- renderTable({
-      hist <- cbind(values$values.history[,1],ShowHistory(hist = values$values.history))
-      if(!is.null(hist)) colnames(hist) <- c("Round","Deck1","Deck2","Result1","Result2")
-      hist
-    })
+      if (RV$update > 0) tor$result.complete
+    }, digits = 0)
     
     output$summary <- renderTable({
-      if(!is.null(values$values.history)){
-        summary <- ShowKOSummary(values$values.history)
-        rownames(summary) <- deck.user[,1]
-        colnames(summary) <- c("圧勝","辛勝","惜敗","惨敗")
-        summary <- summary[order(summary[,1],summary[,2],summary[,3],summary[,4],decreasing = T),]
-        summary
+      if (RV$update > 0){
+        sm <- tor$result.summary[tor$ranking.id,]
+        colnames(sm) <- c("圧勝", "辛勝", "惜敗", "惨敗")
+        sm
       }
-    },include.rownames=T)
+    }, include.rownames=T, digits = 0)
     
     
     ####################
@@ -48,138 +29,142 @@ shinyServer(
     
     #### TitlePanel ####
     output$title <- renderText({
-      values$title
+      paste("ROUND", RV$round)
     })
     
     #### SideBar ####
     output$status <- renderText({
-      values$sttext
+      RV$error
     })
     
     output$kos <- renderTable({
-      values$kos
-    },include.rownames=F)
+      if (RV$update > 0){
+        sm <- tor$ranking.summary[tor$ranking.id,]
+        colnames(sm) <- c("順位", "デッキ", "使用者", "勝")
+        sm
+      }
+    }, include.rownames=F, digit = 0)
     
     output$savetime <- renderText({
-      values$save.time
+      RV$save.time
     })
     
     #### MainPanel ####
-    output$deck.left <- renderUI({
-      lapply(1:(decks/2), function(i){
-        selectInput(paste0("deckl",i),label = paste0("match",i),choices = as.character(data.deck[,2]),selected = 0)
+    output$fightrow <- renderUI({
+      lapply(1:tor$nfcard, function(i){
+        fluidRow(
+          column(3, h3(RV$dnm$left[i])),
+          column(1, h3("VS")),
+          column(3, h3(RV$dnm$right[i])),
+          column(2, offset = 1,
+                 selectInput(paste0("resultl", i), label = "result", choices = c("--", 0:2))),
+          column(2, selectInput(paste0("resultr", i), label = "vs", choices = c("--", 0:2)))
+        )
       })
     })
-    output$deck.right <- renderUI({
-      lapply(1:(decks/2), function(i){
-        selectInput(paste0("deckr",i),label = "vs",choices = as.character(data.deck[,2]),selected = 0)
-      })
-    })
-    output$result.left <- renderUI({
-      lapply(1:(decks/2), function(i){
-        selectInput(paste0("resultl",i),label = paste0("result",i),choices = c("--",0:2))
-      })
-    })
-    output$result.right <- renderUI({
-      lapply(1:(decks/2), function(i){
-        selectInput(paste0("resultr",i),label = "vs",choices = c("--",0:2))
-      })
-    })
-    
     
     #### Ivents ####
     observeEvent(input$save, {
       
-      values$sttext <- NULL
+      # 抽選が押される前は無視
+      if(nrow(tor$fight.card) > 0){        
+        RV$error <- ""
+        
+        # 勝敗記録をuiから収集
+        result <- data.frame(
+          didl = tor$fight.card.id$didl,
+          didr = tor$fight.card.id$didr,
+          winl = sapply(1:tor$nfcard, function(i) input[[paste0("resultl",i)]]),
+          winr = sapply(1:tor$nfcard, function(i) input[[paste0("resultr",i)]])
+        )
+        
+        test <<- result
+        # 有効な勝敗記録を登録
+        for (i in 1:ent$nplayer) {
+          # if result[i,] includes "--"
+          if(NA %in% suppressWarnings(result[i,] %>% as.matrix %>% as.numeric)) next
+          
+          # i行目の対戦カードと結果をリストに格納
+          result.i <- result[i,] %>% as.matrix %>% as.numeric %>% as.list
+          names(result.i) <- colnames(result)
+          
+          if(!tor$is.validFightCard(result.i$didl, result.i$didr)) next
+            # RV$error <- "Error: tried to submit non valid fight card"
+          
+          else if(result.i$winl == result.i$winr)
+            RV$error <- "Error: includes invalid fight result both players win same times"
+          
+          else if(!xor(result.i$winl == 2, result.i$winr == 2))
+            RV$error <- "Error: includes invalid fight result neither player win 2 times"
+          
+          # submit fight result here
+          else tor$addFightResult(didl = result.i$didl, didr = result.i$didr,
+                                  winl = result.i$winl, winr = result.i$winr)
+        }
+        
+        # 勝敗数を再計算
+        tor$updateWinLose()
+        RV$save.time <- paste("Last Saved --", format(Sys.time(), "%b月%d日 %H時%M分")) 
+        RV$update <- RV$update + 1
+        
+        # トーナメントを保存
+        save(tor, file = paste0(tor$tournament.name, ".tornament"))
+        # print(tor$result)
+        # test <<- tor$clone()
+      }
+    })
+    
+    # 抽選ボタン
+    observeEvent(input$lottery,{
+      for (i in 1:tor$nfcard) {
+        updateSelectInput(session, paste0("resultl", i), selected = "--")
+        updateSelectInput(session, paste0("resultr", i), selected = "--")
+      }
       
-      #成績収集
-      result <- cbind(
-        sapply(1:(decks/2),function(i){which(data.deck[,2] == input[[paste0("deckl",i)]])}),
-        sapply(1:(decks/2),function(i){which(data.deck[,2] == input[[paste0("deckr",i)]])}),
-        sapply(1:(decks/2),function(i){input[[paste0("resultl",i)]]}),
-        sapply(1:(decks/2),function(i){input[[paste0("resultr",i)]]})
-      )
-      
-      #historyの記録
-      for (game in 1:(decks/2)) {
-        if(identical(could_be_numeric(result[game,3:4]),c(T,T))){
-          if (IdenticalMatch(result[game,1:2],data.history)) {
-            if (result[game,3] == result[game,4])
-              values$sttext <- "Error: Result that wins same times was tried to save."
-            else
-              data.history <<- rbind(data.history,as.numeric(c(substring(as.character(values$title),7),result[game,])))
-            values$values.history <- data.history
+      error <- tor$setNewFightCard()
+      RV$dnm <- tor$fight.card.list
+      RV$error <- ifelse(error, "Error: lottery failed", "")
+      tor$round <- tor$round + 1
+      RV$round <- tor$round
+    })
+    
+    # 再抽選ボタン（ラウンドを進めない抽選）
+    observeEvent(input$relottery,{
+      for (i in 1:tor$nfcard) {
+        updateSelectInput(session, paste0("resultl", i), selected = "--")
+        updateSelectInput(session, paste0("resultr", i), selected = "--")
+      }
+      error <- tor$setNewFightCard()
+      RV$error <- ifelse(error, "Error: lottery failed", "")
+      RV$dnm <- tor$fight.card.list
+    })
+    
+    # load tournament 機能
+    observeEvent(input$tofile,{
+      if (!is.null(input$tofile)) {
+        # トーナメントファイルを読み込み
+        load(input$tofile$name)
+        tor <<- tor
+        RV$error <- "Message: load complete"
+        RV$round <- tor$round
+        RV$update <- RV$update + 1
+        
+        # 読み込んだトーナメントファイルを対戦テーブルに反映
+        RV$dnm <- tor$fight.card.list
+        for (i in 1:tor$nfcard) {
+          l <- tor$fight.card.id$didl[i]
+          r <- tor$fight.card.id$didr[i]
+          if (!tor$is.newFightCard(l, r)){
+            result.i <- tor$result[tor$result$didl == l & tor$result$didr == r,]
+            updateSelectInput(session, paste0("resultl", i), selected = result.i$winl)
+            updateSelectInput(session, paste0("resultr", i), selected = result.i$winr)
+          }
+          else{
+            updateSelectInput(session, paste0("resultl", i), selected = "--")
+            updateSelectInput(session, paste0("resultr", i), selected = "--")
           }
         }
-      }
-      
-      #koの更新
-      if (!is.null(data.history)) {
-        data.kos <<- calcKos(data.kos,data.history[,2:5],values)
-        values$kos <- data.kos[order(as.numeric(data.kos[,4]),decreasing = T),]
-        values$save.time <- paste("last saved",Sys.time())
         
-        attr(data.history,"match.table") <- result
-        attr(data.history,"round") <- substring(as.character(values$title),7)
-        save(data.history,file = "korec.ko")
-      }
-      
-    })
-    
-    #抽選ボタン
-    observeEvent(input$lottery,{
-      opponent <- calcOponent(data.kos,data.history[,2:5],values)
-      for (i in 1:(decks/2)) {
-        updateSelectInput(session,paste0("deckl",i),selected = data.deck[opponent[i,1],2])
-        updateSelectInput(session,paste0("deckr",i),selected = data.deck[opponent[i,2],2])
-        updateSelectInput(session,paste0("resultl",i),selected = "--")
-        updateSelectInput(session,paste0("resultr",i),selected = "--")
-      }
-      
-      values$title <- paste("ROUND",as.numeric(substring(values$title,7))+1)
-    })
-    
-    #再抽選ボタン（ラウンドを進めない抽選）
-    observeEvent(input$relottery,{
-      opponent <- calcOponent(data.kos,data.history[,2:5],values)
-      for (i in 1:(decks/2)) {
-        updateSelectInput(session,paste0("deckl",i),selected = data.deck[opponent[i,1],2])
-        updateSelectInput(session,paste0("deckr",i),selected = data.deck[opponent[i,2],2])
-        updateSelectInput(session,paste0("resultl",i),selected = "--")
-        updateSelectInput(session,paste0("resultr",i),selected = "--")
-      }
-    })
-    
-    #load ko 機能
-    observeEvent(input$kofile,{
-      if (is.null(input$kofile)==F) {
-        load(paste0("./",input$kofile[1]))
-        data.history <<- data.history
-        
-        # for .ko file ver2.2 early
-        if(ncol(data.history)==4){
-          data.history.attr <- attributes(data.history)
-          data.history <- cbind(0,data.history)
-          attr(data.history,"match.table") <- data.history.attr$match.table
-        }
-          
-        values$values.history <- data.history
-        
-        
-        match.table <- attr(data.history,"match.table")
-        for (i in 1:(decks/2)) {
-          updateSelectInput(session,paste0("deckl",i),selected = data.deck[as.numeric(match.table[i,1]),2])
-          updateSelectInput(session,paste0("deckr",i),selected = data.deck[as.numeric(match.table[i,2]),2])
-          updateSelectInput(session,paste0("resultl",i),selected = match.table[i,3])
-          updateSelectInput(session,paste0("resultr",i),selected = match.table[i,4])
-        }
-        values$title <- paste("ROUND",as.numeric(attr(data.history,"round"),7))
-        
-        if (!is.null(data.history)) {
-          data.kos <<- calcKos(data.kos,data.history[,2:5],values)
-          values$kos <- data.kos[order(as.numeric(data.kos[,4]),decreasing = T),]
-          values$stext <- "Load completed."
-        }
       }
     })
     
