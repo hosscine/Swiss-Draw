@@ -2,7 +2,7 @@
 loadEntryData <- function(file){
   if(!missing(file)) load(file)
   ent <- entryData$new(deck.names = as.character(deck$deck.name), deck.player.id = deck$member.id,
-                       player.names = member, entry.title = title)
+                       player.names = member, entry.title.ja = title.ja, entry.title.en = title.en)
   return(ent)
 }
 
@@ -13,8 +13,9 @@ entryData <- R6::R6Class(
   # public field ------------------------------------------------------------
 
   public = list(
-    initialize = function(deck.names, deck.player.id, player.names, entry.title){
-      private$titlename <- entry.title 
+    initialize = function(deck.names, deck.player.id, player.names, entry.title.ja, entry.title.en){
+      private$titlename.ja <- entry.title.ja
+      private$titlename.en <- entry.title.en
       private$decks <- deck.names
       private$decks.player.id <- deck.player.id
       private$players <- player.names
@@ -24,7 +25,8 @@ entryData <- R6::R6Class(
   # private field -----------------------------------------------------------
 
   private = list(
-    titlename = NULL,
+    titlename.ja = NULL,
+    titlename.en = NULL,
     
     decks = NULL,
     decks.player.id = NULL,
@@ -35,7 +37,8 @@ entryData <- R6::R6Class(
   # active binding-----------------------------------------------------------
 
   active = list(
-    title = function() private$titlename,
+    title.ja = function() private$titlename.ja,
+    title.en = function() private$titlename.en,
     
     # deck property ------------------------------------------
     ndeck = function() private$decks %>% length,

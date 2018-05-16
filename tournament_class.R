@@ -214,7 +214,8 @@ tournament <- R6::R6Class(
   # active binding ----------------------------------------------------------
   
   active = list(
-    tournament.name = function() private$entry$title,
+    title.ja = function() private$entry$title.ja,
+    title.en = function() private$entry$title.en,
     get.entry = function() private$entry,
     
     result = function() private$fight.result,
