@@ -31,7 +31,7 @@ tor <- startTournament(ent)
 
 
 # 4. edit the file name ------------------------------------------------------
-save(tor, file = paste0("tournaments/", title.en, ".tournament"))
+save(tor, file = paste0("tournaments/", tor$title.en, ".tournament"))
 
 
 # 5. RUN SHINY APP and READ TOURNAMENT FILE! ---------------------------------
