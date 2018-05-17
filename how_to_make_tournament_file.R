@@ -24,14 +24,14 @@ deck <- data.frame(
   member.id = c(1, 2)
 )
 
-# save(deck, member, title.ja, title.en, file = paste0(title.en, ".entry"))
+# save(deck, member, title.ja, title.en, file = paste0("tournaments/", title.en, ".entry"))
 # ent <- loadEntryData("entry_file.entry")
 ent <- loadEntryData()
 tor <- startTournament(ent)
 
 
 # 4. edit the file name ------------------------------------------------------
-save(tor, file = paste0(title.en, ".tournament"))
+save(tor, file = paste0("tournaments/", title.en, ".tournament"))
 
 
 # 5. RUN SHINY APP and READ TOURNAMENT FILE! ---------------------------------

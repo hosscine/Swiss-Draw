@@ -109,7 +109,7 @@ shinyServer(
         
         # トーナメントを保存
         if (exists("datapath")) save(tor, file = datapath)
-        else save(tor, file = paste0(tor$title.en, ".tournament"))
+        else save(tor, file = paste0("tournament/", tor$title.en, ".tournament"))
         # print(tor$result)
         # test <<- tor$clone()
       }
@@ -144,7 +144,7 @@ shinyServer(
     observeEvent(input$tofile,{
       if (!is.null(input$tofile)) {
         # トーナメントファイルを読み込み
-        datapath <<- input$tofile$datapath
+        datapath <<- paste0("tournaments/", input$tofile$name)
         load(datapath)
         tor <<- tor
         RV$error <- "Message: load complete"
