@@ -9,9 +9,9 @@ loadEntryData <- function(file){
 
 entryData <- R6::R6Class(
   "entryData",
-
+  
   # public field ------------------------------------------------------------
-
+  
   public = list(
     initialize = function(deck.names, deck.player.id, player.names, entry.title.ja, entry.title.en){
       private$titlename.ja <- entry.title.ja
@@ -21,9 +21,9 @@ entryData <- R6::R6Class(
       private$players <- player.names
     }
   ),
-
+  
   # private field -----------------------------------------------------------
-
+  
   private = list(
     titlename.ja = NULL,
     titlename.en = NULL,
@@ -33,9 +33,9 @@ entryData <- R6::R6Class(
     
     players = NULL
   ),
-
+  
   # active binding-----------------------------------------------------------
-
+  
   active = list(
     title.ja = function() private$titlename.ja,
     title.en = function() private$titlename.en,
@@ -49,7 +49,7 @@ entryData <- R6::R6Class(
       ret <- private$players[private$decks.player.id]; names(ret) <- self$deck; return(ret)},  
     deck.player.id = function(){
       ret <- private$decks.player.id; names(ret) <- self$deck; return(ret)},
-
+    
     # player property ------------------------------------------
     nplayer = function() private$players %>% length,    
     player = function() private$players,

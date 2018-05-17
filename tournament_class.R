@@ -197,7 +197,7 @@ tournament <- R6::R6Class(
     
     fight.result = NULL,
     fight.result.summary = NULL,
-      
+    
     nwin = NULL,
     nlose = NULL,
     
@@ -244,7 +244,7 @@ tournament <- R6::R6Class(
     nplayer = function() private$entry$nplayer,
     nfcard = function() private$nfight.card,
     
-    deck.player = function()private$entry$deck.player.id,
+    deck.player = function() private$entry$deck.player.id,
     deck.player.id = function() private$entry$deck.player.id,
     
     nwins = function() private$nwin,

@@ -2,13 +2,13 @@ tagList(
   navbarPage(
     theme = shinythemes::shinytheme("darkly"),  # <--- To use a theme, uncomment this
     title = "Swiss Draw Lottery",
-
-# Match View タブ ------------------------------------------------------------------
+    
+    # Match View タブ --------------------------------------------------------------------
     tabPanel("Match View",
              titlePanel(textOutput("title")),
              sidebarLayout(position = "right",
-
-# 右側の対戦テーブル -----------------------------------------------------------------
+                           
+                           # 右側の対戦テーブル ------------------------------------------
                            sidebarPanel(
                              h3("Points Summary"),
                              textOutput("status"), # エラーメッセージ表示
@@ -19,8 +19,8 @@ tagList(
                              hr(),
                              fileInput("tofile",".tournamentファイル読み込み")
                            ),
-
-# 左側の対戦デッキと結果 -------------------------------------------------------------
+                           
+                           # 左側の対戦デッキと結果 --------------------------------------
                            mainPanel(
                              uiOutput("fightrow"),
                              fluidRow(
@@ -30,9 +30,9 @@ tagList(
                            )
              )
     ),
-
-# Ranking View タブ ------------------------------------------------------------------
-  tabPanel("Ranking View",
+    
+    # Ranking View タブ ------------------------------------------------------------------
+    tabPanel("Ranking View",
              sidebarLayout(mainPanel(titlePanel("Ranking"),
                                      tableOutput("summary"),width = 6),
                            

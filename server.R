@@ -1,7 +1,8 @@
 
 RV <- shiny::reactiveValues(error = "", round = 0, save.time = "", update = 0,
                             dnm = list(left = rep("NO ENTRY", tor$nfcard),
-                                       right = rep("NO ENTRY", tor$nfcard)))
+                                       right = rep("NO ENTRY", tor$nfcard)),
+                            nav = tor$title.ja)
 
 shinyServer(
   function(input, output, session) {
@@ -89,7 +90,7 @@ shinyServer(
           names(result.i) <- colnames(result)
           
           if(!tor$is.validFightCard(result.i$didl, result.i$didr)) next
-            # RV$error <- "Error: tried to submit non valid fight card"
+          # RV$error <- "Error: tried to submit non valid fight card"
           
           else if(result.i$winl == result.i$winr)
             RV$error <- "Error: includes invalid fight result both players win same times"
