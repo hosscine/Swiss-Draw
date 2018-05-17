@@ -20,8 +20,8 @@ member <- c("A", "B")
 
 # 3. edit deck.name and deck.player.id ---------------------------------------
 deck <- data.frame(
-  deck.names = c("Kaiju", "Kozmo"),
-  member.id = c(1, 2)
+  deck.names = c("Kaiju", "Kozmo", "SR", "BA"),
+  member.id = c(1, 1, 2, 2)
 )
 
 # save(deck, member, title.ja, title.en, file = paste0("tournaments/", title.en, ".entry"))

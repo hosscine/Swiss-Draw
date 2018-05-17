@@ -108,8 +108,8 @@ tournament <- R6::R6Class(
       
       private$deck.ranking <- order(private$fight.result.summary$w2_0,
                                     private$fight.result.summary$w2_1,
-                                    -private$fight.result.summary$l1_2,
-                                    -private$fight.result.summary$l0_2, decreasing = T)
+                                    -private$fight.result.summary$l0_2,
+                                    -private$fight.result.summary$l1_2, decreasing = T)
     },
     
     #' Sets new fight cards depending on \code{nwin}
