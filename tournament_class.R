@@ -106,7 +106,9 @@ tournament <- R6::R6Class(
       private$fight.result.summary[names(lose1_2.times) %>% as.numeric,]$l1_2 <- lose1_2.times
       private$fight.result.summary[names(lose0_2.times) %>% as.numeric,]$l0_2 <- lose0_2.times
       
-      private$deck.ranking <- order(private$fight.result.summary$w2_0,
+      private$deck.ranking <- order(private$fight.result.summary$w2_0 +
+                                      private$fight.result.summary$w2_1,
+                                    private$fight.result.summary$w2_0,
                                     private$fight.result.summary$w2_1,
                                     -private$fight.result.summary$l0_2,
                                     -private$fight.result.summary$l1_2, decreasing = T)
